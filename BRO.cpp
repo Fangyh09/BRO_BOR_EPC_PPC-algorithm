@@ -1,11 +1,7 @@
-// RETEST.cpp : 定义控制台应用程序的入口点。
-//
-
-
 /* **********************************************
 Auther: fangyh09
-Created Time: 2015/11/6 13:24:11
-File Name   : RE.cpp
+Created Time: 2015/11/6 
+File Name   : BRO.cpp
 *********************************************** */
 #include <iostream>
 #include <cstring>
@@ -24,26 +20,33 @@ using namespace std;
 
 
 
-//equal
+
+
+
+// equal
 //less than more than 
-enum TOKENNAME {ID,NUMBER,RELOP,BOLOP,LBRACKET,RBRACKET,SPE}; 
-enum RELOPVALUE {LT,LE,EQ,NE,GT,GE,NONE};
-enum BOLOPVALUE {OR,AND,NOT};
+enum TOKENNAME {ID,NUMBER,RELOP,BOLOP,LBRACKET,RBRACKET,SPE};  //identifier,number,relatio noperator,boolean operator, left bracket,right bracket,special
+enum RELOPVALUE {LT,LE,EQ,NE,GT,GE,NONE};  // <,<=,=,!=,>,>=,null
+enum BOLOPVALUE {OR,AND,NOT};  // || && !
+
 struct Token
 {
-   TOKENNAME tname;
-   RELOPVALUE relopvalue;
-   BOLOPVALUE bolopvalue;
-   string id;
-   int val;  //not contain double...     
+   TOKENNAME tname; //token类型 
+   RELOPVALUE relopvalue;  //关系操作符值
+   BOLOPVALUE bolopvalue;  //布尔操作符值
+   string id;              //string 
+   int val;  //not contain double...  //number     
 };
 
-struct Exp
+//Expression 表达式
+struct Exp 
 {
-	Token rop;
-	Token left;
-	Token right;
+	Token rop;  //操作符   
+	Token left;  //左操作数
+	Token right; //右操作数
 };
+
+//laxiacl analyzer
 class LA
 {
 public:
@@ -52,6 +55,8 @@ public:
 		s = "";
 		curpos = 0;
 	}
+
+	//从filename文件中读入string
 	void read(string filename)
 	{
 		freopen(filename.c_str(),"r",stdin);
@@ -59,6 +64,10 @@ public:
 		fclose(stdin);
 		freopen("CON","r",stdin);
 	}
+	/*
+	   获得下一个token,如果成功返回true并且token中的属性赋值好引用返回,否则返回false
+
+	*/
 	bool getNextToken(Token& token)
 	{
 		int sz = s.size();
@@ -71,18 +80,18 @@ public:
 		{
 			return false;
 		}
-		if(s[curpos] == '(')
+		if(s[curpos] == '(')   //(
 		{
 			token.tname = LBRACKET;
 			curpos ++;
 		}
-		else if(s[curpos] == ')')
+		else if(s[curpos] == ')')  //)
 		{
 			token.tname = RBRACKET;
 			curpos ++;
 		}
-		else if(s[curpos] == '=')
-		{
+		else if(s[curpos] == '=') // =
+		{ 
 			token.tname = RELOP;
 			token.relopvalue = EQ;
 			curpos ++;
@@ -93,13 +102,13 @@ public:
 		}
 		else if(s[curpos] == '<')
 		{
-			if(curpos + 1 < sz && s[curpos+1] == '=')
+			if(curpos + 1 < sz && s[curpos+1] == '=') // <=
 			{
 				token.tname = RELOP;
 				token.relopvalue = LE;
 				curpos += 2;
 			}
-			else
+			else    // < 
 			{
 				token.tname = RELOP;
 				token.relopvalue = LT;
@@ -108,13 +117,13 @@ public:
 		}
 		else if(s[curpos] == '>')
 		{
-			if(curpos +1 <sz && s[curpos+1] == '=')
+			if(curpos +1 <sz && s[curpos+1] == '=') // >=
 			{
 				token.tname = RELOP;
 				token.relopvalue = GE;
 				curpos += 2;
 			}
-			else
+			else   // >
 			{
 				token.tname = RELOP;
 				token.relopvalue = GT;
@@ -123,32 +132,32 @@ public:
 		}
 		else if(s[curpos] == '!')
 		{
-			if(curpos + 1 < sz && s[curpos+1]  == '=')
+			if(curpos + 1 < sz && s[curpos+1]  == '=') //!=
 			{
 				token.tname = RELOP;
 				token.relopvalue = NE;
 				curpos += 2;
 			}
-			else
+			else  // !
 			{
 				token.tname = BOLOP;
 				token.bolopvalue = NOT;
 				curpos ++;
 			}
 		}
-		else if(s[curpos] == '&')
+		else if(s[curpos] == '&') // &&
 		{
 			token.tname = BOLOP;
 			token.bolopvalue = AND;
 			curpos += 2;
 		}
-		else if(s[curpos] == '|')
+		else if(s[curpos] == '|') // ||
 		{
 			token.tname = BOLOP;
 			token.bolopvalue = OR;
 			curpos += 2;
 		}
-		else if(isalpha(s[curpos]) || s[curpos] == '_')
+		else if(isalpha(s[curpos]) || s[curpos] == '_') //标识符
 		{
 			token.tname = ID;
 	        string tmp = "";
@@ -161,7 +170,7 @@ public:
 			}
 			token.id = tmp;
 		}
-		else if(isdigit(s[curpos]))
+		else if(isdigit(s[curpos])) //数字
 		{
 			token.tname = NUMBER;
 			int sum = 0;
@@ -178,27 +187,31 @@ public:
 	}
 	
 private:
-	string s;
-	int curpos;
+	string s;   //输入string
+	int curpos; //当前指针位置
 };
 #define prln(x) cout << #x << x << endl
 
 const int maxn = 110;
 const int maxm = 110;
+
+//布尔表达式
 struct BoolExp
 {
   vector<Token> vec[maxn];
 };
+
+//语法树的节点
 struct Tnode
-{
-	Token t;
-	Tnode* left;
-	Tnode* right;
-	Token token;
-	vector<vector<string> > True;
-	vector<vector<string> > False;
+{  
+	Token t;  
+	Tnode* left;  //left children
+	Tnode* right; //right children
+	Token token; 
+	vector<vector<string> > True; //表达式为真的 约束集合
+	vector<vector<string> > False; //表达式为假的 约束集合
 	
-	Tnode(Token t)
+	Tnode(Token t) //constructor
 	{
 		token = t;
 		left = right = NULL;
@@ -210,6 +223,8 @@ struct Tnode
 	}
 };
 
+
+//表达式树
 class ExpTree
 {
 public:
@@ -220,7 +235,7 @@ public:
 			dfsdelete(root);
 		}
 	}
-
+	//析构函数 释放内存
 	void dfsdelete(Tnode* root)
 	{
 		if(root->left != NULL)
@@ -234,7 +249,7 @@ public:
 		delete root;
 	}
 
-	
+	//根据输入str和根节点t建立语法树
 	void build(Tnode* &t,vector<Token> str)
 	{
 		stack<Tnode*> nodestack;
@@ -279,6 +294,7 @@ public:
 		}
 		root = t;
 	}
+	//ONTO 函数
 	vector<vector<string> > ONTO(vector<vector<string> > x,vector<vector<string> > y) //on to xor
 		{
 			vector<vector<string> > ret;
@@ -296,6 +312,8 @@ public:
 			}
 			return ret;
 		}
+
+	//给每个节点的True集合与False集合赋值
 	void labletf()
 	{
 		if(root != NULL)
@@ -303,7 +321,7 @@ public:
 			innerLabletf(root);
 		}
 	}
-	
+	//get suffix expression according to the str
 	vector<string> getReverseRelop(string str)
 	{
 		vector<string> ret;
@@ -337,6 +355,8 @@ public:
 		}
 		return ret;
 	}
+	//给每个节点的True集合与False集合赋值
+	//代码需要些优化(提取子函数)...
 	void innerLabletf(Tnode* root)
 	{
 		if(root->left != NULL)
@@ -347,38 +367,38 @@ public:
 		{
 			innerLabletf(root->right);
 		}
-		if(root->token.tname == SPE)
+		if(root->token.tname == SPE) //如果是叶子节点
 		{
-			if(root->token.relopvalue == NONE)
+			if(root->token.relopvalue == NONE) //如果该节点没有关系操作符
 			{
-				vector<string> tvec;
+				vector<string> tvec;     //True集合中加入 "t"
 				tvec.push_back("t");
 				root->True.push_back(tvec);
 
 				vector<string> fvec;
-				fvec.push_back("f");
+				fvec.push_back("f");    //False集合中加入 "f"
 				root->False.push_back(fvec);
 			}
 			else
 			{  //need refine later
-				if(root->token.relopvalue == LT)
+				if(root->token.relopvalue == LT) // < 
 				{
 					vector<string> vec;
 
 					vec.clear();
-				   	vec.push_back("<");
+				   	vec.push_back("<");    //True集合中加入 "<"
 					root->True.push_back(vec);
 
 					//false
 					vec.clear();
-				   	vec.push_back(">");
+				   	vec.push_back(">");   //False集合中加入">","="
 					root->False.push_back(vec);
 
 					vec.clear();
 					vec.push_back("=");
 					root->False.push_back(vec);
 				}
-				else if(root->token.relopvalue == LE)
+				else if(root->token.relopvalue == LE) // <=
 				{
 					vector<string> vec;
 
@@ -398,7 +418,7 @@ public:
 					
 			
 				}
-				else if(root->token.relopvalue == NE)
+				else if(root->token.relopvalue == NE) //!=
 				{
 					vector<string> vec;
 
@@ -416,7 +436,7 @@ public:
 					root->False.push_back(vec);
 
 				}
-				else if(root->token.relopvalue == EQ)
+				else if(root->token.relopvalue == EQ) // =
 				{
 					vector<string> vec;
 
@@ -434,7 +454,7 @@ public:
 				   	vec.push_back(">");
 					root->False.push_back(vec);
 				}
-				else if(root->token.relopvalue == GT)
+				else if(root->token.relopvalue == GT) // >
 				{
 					vector<string> vec;
 
@@ -452,7 +472,7 @@ public:
 				   	vec.push_back("=");
 					root->False.push_back(vec);
 				}
-				else if(root->token.relopvalue == GE)
+				else if(root->token.relopvalue == GE) // >= 
 				{
 					vector<string> vec;
 
@@ -474,26 +494,32 @@ public:
 
 			}
 		}
-		else if(root->token.tname == BOLOP)
+		else if(root->token.tname == BOLOP) //如果是内部节点
 		{
-			if(root->token.bolopvalue == NOT)
+			if(root->token.bolopvalue == NOT) // !
 			{
 			
 				root->True = root->left->False;
 				
 				root->False = root->left->True;
 			}
-			else if(root->token.bolopvalue == AND)
+			else if(root->token.bolopvalue == AND) // && 
 			{
+
+				//true集合的计算 {lefttrue} ONTO {rightture}
 				vector<vector<string> > ret;
 				ret = ONTO(root->left->True,root->right->True);
 
 				root->True = ret;
 
+				
+				//false集合的计算
+
 				ret.clear();
 				int lsz = root->left->False.size();
 				//exists true[0]
-				vector<string> singleRightTrue = root->right->True[0];
+				vector<string> singleRightTrue = root->right->True[0]; //rightTrue
+				//{leftFalse} XOR rightTrue
 				for(int i=0;i<lsz;i++)
 				{
 					vector<string> tmp = root->left->False[i];
@@ -502,8 +528,8 @@ public:
 				}
 
 				int rsz = root->right->False.size();
-				vector<string> singleLeftTrue = root->left->True[0];
-				
+				vector<string> singleLeftTrue = root->left->True[0]; //leftTrue
+				//leftTrue XOR {rightFalse}
 				for(int i=0;i<rsz;i++)
 				{
 					vector<string> tmp = singleLeftTrue;
@@ -513,17 +539,20 @@ public:
 				}
 				root->False = ret;
 			}
-			else if(root->token.bolopvalue == OR)
+			else if(root->token.bolopvalue == OR) // ||
 			{
+				//False集合的计算 {leftfalse} ONTO {rightfalse}
 				vector<vector<string> > ret;
 				ret = ONTO(root->left->False,root->right->False);
 
 				root->False = ret;
-
+				
+				//True集合的计算 
 				ret.clear();
 				int lsz = root->left->True.size();
 				//exists true[0]
-				vector<string> singleRightFalse = root->right->False[0];
+				vector<string> singleRightFalse = root->right->False[0]; //rightfalse
+				//{leftTrue} XOR rightFalse
 				for(int i=0;i<lsz;i++)
 				{
 					vector<string> tmp = root->left->True[i];
@@ -532,8 +561,9 @@ public:
 				}
 
 				int rsz = root->right->True.size();
-				vector<string> singleLeftFalse = root->left->False[0];
-				
+				vector<string> singleLeftFalse = root->left->False[0]; //leftfalse
+
+				//leftFase XOR {rightTrue}
 				for(int i=0;i<rsz;i++)
 				{
 					vector<string> tmp = singleLeftFalse;
@@ -551,7 +581,7 @@ public:
 		
 		
 	}
-
+	//输出结果
 	void printResult()
 	{
 		cout << "The constraints are: " << endl;
@@ -598,13 +628,17 @@ public:
 private:
 	Tnode* root;
 };
+
+//sytanx analyzer
 class SA
 {
 public:
+	//从filename读入需要解析的string
 	void read(string filename)
 	{
 		la.read(filename);
 	}
+	//获得tokens
 	void getTokens()
 	{
 		tokens.clear();
@@ -614,7 +648,7 @@ public:
 			tokens.push_back(t);
 		}
 	}
-
+	// 将token组装成关系表达式
    	void getReExp()
 	{
 		boexpNums = 0; 
@@ -672,6 +706,7 @@ public:
 			}
 		}
 	}
+	//get suffix expression
 	vector<Token> getSuReExp()
 	{
 		getReExp();
@@ -755,7 +790,7 @@ public:
 			}
 			cout << endl;*/
 		}
-
+	//output for test
 	void printReExp(vector<Token>& ReExp)
 	{
 		int sz = ReExp.size();
@@ -797,7 +832,7 @@ public:
 			}
 		}
 			}
-
+	//output for test
 	void printBoolExp()
 	{
 		for(int i=0;i<boexpNums;i++)
@@ -819,12 +854,12 @@ public:
 		}
 	}
 private:
-	vector<Token> tokens;
-	vector<Token> ReExp;
-	vector<Token> SuReExp;
+	vector<Token> tokens; //token集合
+	vector<Token> ReExp;  //
+	vector<Token> SuReExp; //suffix expression
 	LA la;
-	vector<Token> boolExp[maxn];
-	int boexpNums;
+	vector<Token> boolExp[maxn]; //叶子节点的关系表达式
+	int boexpNums; //叶子节点的数量
 };
 int main()
 {
@@ -833,12 +868,12 @@ int main()
 	ExpTree tree;
 	Tnode* root;
 	sa.read("D:\\in.txt");
- 	vector<Token> sureexp= sa.getSuReExp();
+ 	vector<Token> sureexp= sa.getSuReExp(); //get suffix expression
 	sa.printBoolExp();
 	cout << endl;
-	tree.build(root,sureexp);
-	tree.labletf();
-	tree.printResult();
+	tree.build(root,sureexp); //建立语法树
+	tree.labletf();    //给每个节点的true false集合赋值
+	tree.printResult(); //输出结果
 	
  while(1);
 }
